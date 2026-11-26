@@ -15,6 +15,7 @@ import { isArcActive } from '../arcs/arcRules.ts'
 import type { Arc } from '../arcs/types.ts'
 import { MOVE_TITLE_MAX, normalizeMoveTitle } from '../moves/moveRules.ts'
 import { parseMoveDate } from '../moves/parseMoveDate.ts'
+import { haptic } from '../../lib/haptics.ts'
 
 type Panel = 'calendar' | 'arc' | null
 
@@ -264,7 +265,10 @@ function Chip({
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={() => {
+        haptic('selection')
+        onClick()
+      }}
       aria-pressed={selected}
       {...rest}
       className={[

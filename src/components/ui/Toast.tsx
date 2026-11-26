@@ -1,3 +1,4 @@
+import { haptic } from '../../lib/haptics.ts'
 import type { ToastState } from './useToast.ts'
 
 /**
@@ -20,6 +21,7 @@ export function Toast({ toast, onDismiss }: { toast: ToastState | null; onDismis
             <button
               type="button"
               onClick={() => {
+                haptic('warning')
                 toast.undo?.()
                 onDismiss()
               }}

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { CheckCircle } from '../../../components/ui/CheckCircle.tsx'
-import { ArrowRightIcon } from '../../../components/ui/icons.tsx'
+import { ArrowRightIcon, CalendarIcon } from '../../../components/ui/icons.tsx'
+import { haptic } from '../../../lib/haptics.ts'
 import type { Move } from '../types.ts'
 
 /** How long the check animation plays before the Move leaves the list. */
@@ -28,12 +29,15 @@ export function MoveRow({
   meta,
   action,
   onToggle,
+  onReschedule,
 }: {
   move: Move
   arcTitle?: string
   meta?: string
   action?: RowAction
   onToggle: (id: string) => void
+  /** Opens the day picker for this Move. Always visible on mobile, on hover on desktop. */
+  onReschedule?: (move: Move) => void
 }) {
   const [completing, setCompleting] = useState(false)
   const timer = useRef<number | undefined>(undefined)
@@ -49,8 +53,12 @@ export function MoveRow({
   const checked = move.done || completing
 
   const handleToggle = () => {
-    if (move.done) return onToggle(move.id)
+    if (move.done) {
+      haptic('light')
+      return onToggle(move.id)
+    }
     if (completing) return
+    haptic('success')
     setCompleting(true)
     timer.current = window.setTimeout(() => onToggle(move.id), prefersReducedMotion() ? 0 : COMPLETE_DELAY_MS)
   }
@@ -96,12 +104,31 @@ export function MoveRow({
         {action && !checked && (
           <button
             type="button"
-            onClick={action.onClick}
+            onClick={() => {
+              haptic('light')
+              action.onClick()
+            }}
             aria-label={`${action.label}: ${move.title}`}
             className="hidden h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium text-ink-2 opacity-0 outline-none transition-opacity duration-150 group-hover/row:opacity-100 hover:bg-surface hover:text-ink focus-visible:opacity-100 focus-visible:bg-surface lg:flex"
           >
             {action.label}
             <ArrowRightIcon size={14} strokeWidth={2} />
+          </button>
+        )}
+
+        {onReschedule && !checked && (
+          <button
+            type="button"
+            onClick={() => {
+              haptic('light')
+              onReschedule(move)
+            }}
+            aria-label={`Reschedule: ${move.title}`}
+            title="Reschedule"
+            // 40px hit area on mobile; on desktop it joins the hover action.
+            className="-my-1.5 -mr-2 grid size-10 shrink-0 place-items-center rounded-full text-ink-3 outline-none transition-[opacity,color,background-color] duration-150 hover:bg-surface hover:text-ink focus-visible:bg-surface focus-visible:text-ink active:bg-surface lg:-ml-2 lg:size-8 lg:opacity-0 lg:group-hover/row:opacity-100 lg:focus-visible:opacity-100"
+          >
+            <CalendarIcon size={18} strokeWidth={1.9} />
           </button>
         )}
       </div>

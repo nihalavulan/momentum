@@ -1,3 +1,4 @@
+import { haptic } from '../../lib/haptics.ts'
 import { TABS, type TabId } from './tabs.ts'
 import { useHideOnScroll } from './useHideOnScroll.ts'
 
@@ -24,7 +25,10 @@ export function TabBar({ active, onSelect }: { active: TabId; onSelect: (id: Tab
             <li key={id} className="contents">
               <button
                 type="button"
-                onClick={() => onSelect(id)}
+                onClick={() => {
+                  if (!isActive) haptic('selection')
+                  onSelect(id)
+                }}
                 aria-current={isActive ? 'page' : undefined}
                 className={[
                   'flex flex-col items-center justify-center gap-1 outline-none transition-colors duration-150',

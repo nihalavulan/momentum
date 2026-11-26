@@ -1,3 +1,4 @@
+import { useCallback, useState } from 'react'
 import { labels } from '../../config/labels.ts'
 import { formatDayTitle, todayISO, type ISODate } from '../../lib/dates.ts'
 import { Toast } from '../../components/ui/Toast.tsx'
@@ -7,6 +8,9 @@ import { Composer } from '../today/Composer.tsx'
 import { DoneGroup } from '../today/DoneGroup.tsx'
 import { MoveList, MoveRow } from './components/MoveRow.tsx'
 import { useMoves } from './movesContext.ts'
+import { RescheduleSheet } from './components/RescheduleSheet.tsx'
+import type { Move } from './types.ts'
+import { haptic } from '../../lib/haptics.ts'
 import { groupUndated } from './moveRules.ts'
 
 /**
@@ -20,6 +24,13 @@ export function MovesView() {
   const { arcs, getArc } = useArcs()
   const { open, done } = groupUndated(moves)
   const { toast, show, dismiss } = useToast()
+  const [rescheduling, setRescheduling] = useState<Move | null>(null)
+  const closeReschedule = useCallback(() => setRescheduling(null), [])
+
+  const rescheduleTo = (move: Move, to: ISODate | null) => {
+    moveToDay(move.id, to)
+    if (to !== null) show(`Moved to ${formatDayTitle(to, today).toLowerCase()}`, () => moveToDay(move.id, move.date))
+  }
 
   const handleToggle = (id: string) => {
     const move = moves.find((m) => m.id === id)
@@ -28,6 +39,7 @@ export function MovesView() {
   }
 
   const handleAdd = (title: string, date: ISODate | null, arcId: string | null) => {
+    haptic('light')
     addMove(title, date, { arcId })
     if (date !== null) show(`Added to ${formatDayTitle(date, today)}`)
   }
@@ -65,6 +77,7 @@ export function MovesView() {
                     },
                   }}
                   onToggle={handleToggle}
+                  onReschedule={setRescheduling}
                 />
               ))}
             </MoveList>
@@ -84,6 +97,14 @@ export function MovesView() {
         )}
       </div>
 
+      {rescheduling && (
+        <RescheduleSheet
+          move={rescheduling}
+          today={today}
+          onPick={(to) => rescheduleTo(rescheduling, to)}
+          onClose={closeReschedule}
+        />
+      )}
       <Toast toast={toast} onDismiss={dismiss} />
     </>
   )

@@ -9,6 +9,8 @@ import { useHideOnScroll } from '../../components/layout/useHideOnScroll.ts'
 import { ArcsInProgress } from '../arcs/components/ArcsInProgress.tsx'
 import { useArcs } from '../arcs/useArcs.ts'
 import { MoveList, MoveRow } from '../moves/components/MoveRow.tsx'
+import { RescheduleSheet } from '../moves/components/RescheduleSheet.tsx'
+import { haptic } from '../../lib/haptics.ts'
 import { useMoves } from '../moves/movesContext.ts'
 import { dayProgress, groupForDay } from '../moves/moveRules.ts'
 import type { Move } from '../moves/types.ts'
@@ -38,6 +40,8 @@ export function TodayView() {
   const { toast, show, dismiss } = useToast()
   const [sheetOpen, setSheetOpen] = useState(false)
   const closeSheet = useCallback(() => setSheetOpen(false), [setSheetOpen])
+  const [rescheduling, setRescheduling] = useState<Move | null>(null)
+  const closeReschedule = useCallback(() => setRescheduling(null), [])
   const composerInput = useRef<HTMLInputElement>(null)
   const barHidden = useHideOnScroll()
 
@@ -71,13 +75,27 @@ export function TodayView() {
     show(`Moved to ${formatDayTitle(to, today).toLowerCase()}`, () => moveToDay(move.id, move.date))
   }
 
+  const rescheduleTo = (move: Move, to: ISODate | null) => {
+    if (to === null) {
+      moveToDay(move.id, null)
+      show(`Moved to no date. Find it in ${labels.move.plural}.`, () => moveToDay(move.id, move.date))
+    } else reschedule(move, to)
+  }
+
+  const selectDay = (d: ISODate) => {
+    if (d !== day) haptic('selection')
+    setDay(d)
+  }
+
   const moveAllEarlier = () => {
+    haptic('light')
     const previous = overdue.map((m) => [m.id, m.date] as const)
     previous.forEach(([id]) => moveToDay(id, today))
     show(`${previous.length} moved to today`, () => previous.forEach(([id, date]) => moveToDay(id, date)))
   }
 
   const handleAdd = (title: string, date: ISODate | null, arcId: string | null) => {
+    haptic('light')
     addMove(title, date, { arcId })
     // Say where it went when it won't appear in the list you're looking at.
     if (date === null) show(`Added with no date. Find it in ${labels.move.plural}.`)
@@ -105,7 +123,7 @@ export function TodayView() {
                 {!isToday && (
                   <button
                     type="button"
-                    onClick={() => setDay(today)}
+                    onClick={() => selectDay(today)}
                     className="h-9 shrink-0 rounded-full border border-ink/15 px-4 text-[14px] font-semibold text-ink outline-none hover:border-ink/40 focus-visible:ring-2 focus-visible:ring-primary/30"
                   >
                     Back to today
@@ -131,7 +149,7 @@ export function TodayView() {
           </header>
 
           <div className="mt-6 lg:mt-8">
-            <WeekStrip selected={day} today={today} progressFor={progressFor} onSelect={setDay} />
+            <WeekStrip selected={day} today={today} progressFor={progressFor} onSelect={selectDay} />
           </div>
 
           <div className="mt-6 hidden lg:block">
@@ -149,6 +167,7 @@ export function TodayView() {
                     meta={m.date ? formatRelativeDay(m.date, today) : undefined}
                     action={{ label: 'Today', onClick: () => reschedule(m, today) }}
                     onToggle={handleToggle}
+                    onReschedule={setRescheduling}
                   />
                 ))}
               </EarlierCard>
@@ -165,6 +184,7 @@ export function TodayView() {
                     arcTitle={getArc(m.arcId)?.title}
                     action={{ label: nextLabel, onClick: () => reschedule(m, nextDay) }}
                     onToggle={handleToggle}
+                    onReschedule={setRescheduling}
                   />
                 ))}
               </MoveList>
@@ -206,7 +226,7 @@ export function TodayView() {
         <aside className="hidden space-y-10 pt-12 xl:block">
           <ArcsInProgress arcs={arcs} moves={moves} today={today} layout="stack" />
           {isToday && (
-            <UpNext day={tomorrow} today={today} moves={moves} getArc={getArc} onOpen={() => setDay(tomorrow)} />
+            <UpNext day={tomorrow} today={today} moves={moves} getArc={getArc} onOpen={() => selectDay(tomorrow)} />
           )}
         </aside>
       </div>
@@ -214,7 +234,10 @@ export function TodayView() {
       {/* Mobile: the one main action, moving with the bottom bar. */}
       <button
         type="button"
-        onClick={() => setSheetOpen(true)}
+        onClick={() => {
+          haptic('light')
+          setSheetOpen(true)
+        }}
         aria-label={`Add a ${labels.move.singular}`}
         className={[
           'fixed right-5 z-30 grid size-14 place-items-center rounded-full bg-primary text-on-primary outline-none lg:hidden',
@@ -227,6 +250,14 @@ export function TodayView() {
       </button>
 
       {sheetOpen && <ComposerSheet {...composerProps} onClose={closeSheet} />}
+      {rescheduling && (
+        <RescheduleSheet
+          move={rescheduling}
+          today={today}
+          onPick={(to) => rescheduleTo(rescheduling, to)}
+          onClose={closeReschedule}
+        />
+      )}
       <Toast toast={toast} onDismiss={dismiss} />
     </>
   )
