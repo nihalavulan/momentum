@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import { readJSON, writeJSON } from './storage.ts'
 
 /**
- * Light / dark theme, chosen per device. "system" follows the phone or
- * computer setting and switches live when it changes.
+ * Light / dark theme, chosen per device. Light until someone picks another;
+ * "system" follows the phone or computer setting and switches live.
  *
  * index.html runs the same logic inline before the first paint so the page
  * never flashes the wrong colours; keep THEME_KEY and the colours in step.
@@ -20,8 +20,8 @@ const PAGE_COLOR = { dark: '#141414' } as const
 const darkQuery = () => window.matchMedia('(prefers-color-scheme: dark)')
 
 export function readThemePref(): ThemePref {
-  const v = readJSON<string>(THEME_KEY, 'system')
-  return v === 'light' || v === 'dark' ? v : 'system'
+  const v = readJSON<string>(THEME_KEY, 'light')
+  return v === 'system' || v === 'dark' ? v : 'light'
 }
 
 export function resolveTheme(pref: ThemePref): Theme {

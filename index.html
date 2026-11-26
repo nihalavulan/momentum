@@ -10,11 +10,11 @@
     <!-- Theme before first paint (no flash). Same rules as src/lib/theme.ts. -->
     <script>
       ;(function () {
-        var pref = 'system'
+        var pref = 'light'
         try {
-          pref = JSON.parse(localStorage.getItem('momentum:theme')) || 'system'
+          pref = JSON.parse(localStorage.getItem('momentum:theme')) || 'light'
         } catch (e) {}
-        var dark = pref === 'dark' || (pref !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)
+        var dark = pref === 'dark' || (pref === 'system' && matchMedia('(prefers-color-scheme: dark)').matches)
         document.documentElement.dataset.theme = dark ? 'dark' : 'light'
         if (dark) {
           // Placed before the app's own (orange) theme-color, so it wins in dark only.
