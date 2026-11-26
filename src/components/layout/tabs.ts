@@ -1,22 +1,22 @@
 import { useCallback, useEffect, useState } from 'react'
-import { CalendarRange, Flame, Lightbulb, ListTodo, Sun, type LucideIcon } from 'lucide-react'
 import { labels } from '../../config/labels.ts'
+import { ArcsIcon, MovesIcon, SparksIcon, StreaksIcon, TodayIcon, type Icon } from '../ui/icons.tsx'
 
 export type TabId = 'today' | 'moves' | 'arcs' | 'streaks' | 'sparks'
 
 export interface Tab {
   id: TabId
   label: string
-  icon: LucideIcon
+  icon: Icon
 }
 
-/** Tab order and icons. Names come from labels.ts. */
+/** Section order and icons. Names come from labels.ts. */
 export const TABS: Tab[] = [
-  { id: 'today', label: labels.today.singular, icon: Sun },
-  { id: 'moves', label: labels.move.plural, icon: ListTodo },
-  { id: 'arcs', label: labels.arc.plural, icon: CalendarRange },
-  { id: 'streaks', label: labels.streak.plural, icon: Flame },
-  { id: 'sparks', label: labels.spark.plural, icon: Lightbulb },
+  { id: 'today', label: labels.today.singular, icon: TodayIcon },
+  { id: 'moves', label: labels.move.plural, icon: MovesIcon },
+  { id: 'arcs', label: labels.arc.plural, icon: ArcsIcon },
+  { id: 'streaks', label: labels.streak.plural, icon: StreaksIcon },
+  { id: 'sparks', label: labels.spark.plural, icon: SparksIcon },
 ]
 
 const isTabId = (v: string): v is TabId => TABS.some((t) => t.id === v)
@@ -27,12 +27,16 @@ function tabFromHash(): TabId {
 }
 
 /**
- * Active tab kept in state and mirrored to the URL hash (#arcs) with
- * replaceState: a refresh keeps the tab, and Back doesn't cycle through tabs
- * (like an iOS tab bar). No router needed for five flat tabs.
+ * Active section kept in state and mirrored to the URL hash (#arcs) with
+ * replaceState: a refresh keeps the section, and Back doesn't cycle through
+ * them (like an iOS tab bar). No router needed for five flat sections.
+ *
+ * `resetKey` changes when the active section is tapped again, so a view can
+ * return to its starting state (e.g. Today jumps back to today).
  */
 export function useActiveTab() {
   const [tab, setTab] = useState<TabId>(tabFromHash)
+  const [resetKey, setResetKey] = useState(0)
 
   useEffect(() => {
     const onHash = () => setTab(tabFromHash())
@@ -43,8 +47,8 @@ export function useActiveTab() {
   const selectTab = useCallback(
     (id: TabId) => {
       if (id === tab) {
-        // Tapping the active tab scrolls back to the top, like iOS.
         window.scrollTo({ top: 0, behavior: 'smooth' })
+        setResetKey((k) => k + 1)
         return
       }
       window.history.replaceState(null, '', id === 'today' ? window.location.pathname : `#${id}`)
@@ -54,5 +58,5 @@ export function useActiveTab() {
     [tab],
   )
 
-  return [tab, selectTab] as const
+  return { tab, selectTab, resetKey }
 }

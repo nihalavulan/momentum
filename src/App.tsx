@@ -1,20 +1,31 @@
 import { ComingSoonView } from './components/layout/ComingSoonView.tsx'
+import { Sidebar } from './components/layout/Sidebar.tsx'
 import { TabBar } from './components/layout/TabBar.tsx'
 import { TABS, useActiveTab } from './components/layout/tabs.ts'
 import { MovesProvider } from './features/moves/MovesProvider.tsx'
 import { TodayView } from './features/today/TodayView.tsx'
 
-/** App shell: one centred column for the active section, and the bottom section bar. */
+/**
+ * App shell.
+ * Mobile: one column with the bottom bar. Desktop (≥1024px): fixed sidebar
+ * and a wide content area (with a side rail at ≥1280px inside Today).
+ */
 export default function App() {
-  const [tab, selectTab] = useActiveTab()
+  const { tab, selectTab, resetKey } = useActiveTab()
   const current = TABS.find((t) => t.id === tab) ?? TABS[0]
 
   return (
     <MovesProvider>
-      {/* Bottom padding clears the tab bar (54px); #root already adds the home-indicator inset. */}
-      <main className="mx-auto w-full max-w-md px-5 pb-[84px]">
-        {tab === 'today' ? <TodayView /> : <ComingSoonView title={current.label} icon={current.icon} />}
-      </main>
+      <Sidebar active={tab} onSelect={selectTab} />
+      <div className="lg:pl-64">
+        <main className="mx-auto w-full max-w-xl px-5 pb-40 lg:max-w-[1160px] lg:px-14 lg:pb-24">
+          {tab === 'today' ? (
+            <TodayView key={resetKey} />
+          ) : (
+            <ComingSoonView title={current.label} icon={current.icon} />
+          )}
+        </main>
+      </div>
       <TabBar active={tab} onSelect={selectTab} />
     </MovesProvider>
   )

@@ -14,13 +14,14 @@
   --color-on-primary: var(--brand-on-primary);
 
   /* Neutrals (not brand colours): text, hairlines, quiet surfaces. */
-  --color-ink: #1a1a1a;
-  --color-ink-2: #6b6b6b;
-  --color-ink-3: #a8a8a8;
-  --color-line: #ececec;
-  --color-surface: #f6f6f6;
+  --color-ink: #222222;
+  --color-ink-2: #6a6a6a;
+  --color-ink-3: #b0b0b0;
+  --color-line: #ebebeb;
+  --color-surface: #f7f7f7;
 
-  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, 'Segoe UI', Roboto,
+  /* Figtree (bundled, works offline): round and geometric like the Rising M. */
+  --font-sans: 'Figtree Variable', -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, 'Segoe UI', Roboto,
     'Helvetica Neue', Arial, sans-serif;
 }
 
@@ -96,5 +97,55 @@
     animation-duration: 1ms !important;
     animation-delay: 0ms !important;
     transition-duration: 1ms !important;
+  }
+}
+
+/* Sheet and toast entrances (answer to a tap). */
+@layer components {
+  .sheet-enter {
+    animation: sheet-enter 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .fade-enter {
+    animation: fade-enter 160ms ease-out;
+  }
+  .toast-enter {
+    animation: toast-enter 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@keyframes sheet-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fade-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes toast-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
   }
 }

@@ -6,9 +6,11 @@ import type { Move } from './types.ts'
 export interface MovesStore {
   moves: Move[]
   /** Adds a Move (today by default). Returns null if the title is empty. */
-  addMove: (title: string, date?: ISODate) => Move | null
+  addMove: (title: string, date?: ISODate, options?: { arcId?: string | null }) => Move | null
   /** Marks a Move done, or not done again. */
   toggleMove: (id: string) => void
+  /** Reschedules a Move to another day (keeps it open). */
+  moveToDay: (id: string, date: ISODate) => void
 }
 
 export const MovesContext = createContext<MovesStore | null>(null)

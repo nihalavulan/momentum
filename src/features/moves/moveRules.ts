@@ -55,3 +55,27 @@ export function groupForToday(moves: Move[], today: ISODate = todayISO()): Today
 
   return { overdue, open, done, total: overdue.length + open.length + done.length }
 }
+
+/**
+ * Like `groupForToday`, for any day. Earlier unfinished Moves only appear on
+ * today; other days show just their own Moves.
+ */
+export function groupForDay(moves: Move[], day: ISODate, today: ISODate = todayISO()): TodayGroups {
+  if (day === today) return groupForToday(moves, today)
+  const open: Move[] = []
+  const done: Move[] = []
+  for (const move of moves) {
+    if (move.date !== day) continue
+    if (move.done) done.push(move)
+    else open.push(move)
+  }
+  open.sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+  done.sort((a, b) => (b.doneAt ?? '').localeCompare(a.doneAt ?? ''))
+  return { overdue: [], open, done, total: open.length + done.length }
+}
+
+/** Done / total for a day, as shown on the week rings. */
+export function dayProgress(moves: Move[], day: ISODate, today: ISODate = todayISO()) {
+  const g = groupForDay(moves, day, today)
+  return { done: g.done.length, total: g.total }
+}

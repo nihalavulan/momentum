@@ -45,3 +45,47 @@ export function formatRelativeDay(iso: ISODate, today: ISODate = todayISO()): st
     month: 'short',
   })
 }
+
+/** Monday of the week containing `iso`. */
+export function startOfWeek(iso: ISODate): ISODate {
+  const d = parseISODate(iso)
+  const offset = (d.getDay() + 6) % 7 // Mon = 0
+  return addDays(iso, -offset)
+}
+
+/** The 7 days (Mon–Sun) of the week starting at `weekStart`. */
+export function weekDays(weekStart: ISODate): ISODate[] {
+  return Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
+}
+
+/** Big page title for a day: "Today", "Tomorrow", "Yesterday", or the weekday name. */
+export function formatDayTitle(iso: ISODate, today: ISODate = todayISO()): string {
+  if (iso === today) return 'Today'
+  if (iso === addDays(today, 1)) return 'Tomorrow'
+  if (iso === addDays(today, -1)) return 'Yesterday'
+  const d = parseISODate(iso)
+  const diff = Math.round((d.getTime() - parseISODate(today).getTime()) / 86_400_000)
+  if (Math.abs(diff) < 7) return d.toLocaleDateString('en-GB', { weekday: 'long' })
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })
+}
+
+/** "November 2026" */
+export function formatMonthYear(iso: ISODate): string {
+  return parseISODate(iso).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+}
+
+/** "1–20 Dec", or "21 Nov – 10 Dec" across months. */
+export function formatDateRange(start: ISODate, end: ISODate): string {
+  const s = parseISODate(start)
+  const e = parseISODate(end)
+  const month = (d: Date) => d.toLocaleDateString('en-GB', { month: 'short' })
+  if (s.getMonth() === e.getMonth() && s.getFullYear() === e.getFullYear()) {
+    return `${s.getDate()}–${e.getDate()} ${month(e)}`
+  }
+  return `${s.getDate()} ${month(s)} – ${e.getDate()} ${month(e)}`
+}
+
+/** Whole days from `from` to `to` (negative if `to` is earlier). */
+export function daysBetween(from: ISODate, to: ISODate): number {
+  return Math.round((parseISODate(to).getTime() - parseISODate(from).getTime()) / 86_400_000)
+}

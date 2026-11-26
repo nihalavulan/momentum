@@ -15,7 +15,7 @@ import type { Move } from './types.ts'
 export function MovesProvider({ children }: { children: ReactNode }) {
   const [moves, setMoves] = useState<Move[]>(createSampleMoves)
 
-  const addMove = useCallback((rawTitle: string, date: ISODate = todayISO()) => {
+  const addMove = useCallback((rawTitle: string, date: ISODate = todayISO(), options?: { arcId?: string | null }) => {
     const title = normalizeMoveTitle(rawTitle)
     if (!title) return null
     const move: Move = {
@@ -24,7 +24,7 @@ export function MovesProvider({ children }: { children: ReactNode }) {
       date,
       done: false,
       doneAt: null,
-      arcId: null,
+      arcId: options?.arcId ?? null,
       createdAt: new Date().toISOString(),
       source: 'app',
     }
@@ -42,7 +42,14 @@ export function MovesProvider({ children }: { children: ReactNode }) {
     )
   }, [])
 
-  const store = useMemo<MovesStore>(() => ({ moves, addMove, toggleMove }), [moves, addMove, toggleMove])
+  const moveToDay = useCallback((id: string, date: ISODate) => {
+    setMoves((prev) => prev.map((m) => (m.id === id ? { ...m, date } : m)))
+  }, [])
+
+  const store = useMemo<MovesStore>(
+    () => ({ moves, addMove, toggleMove, moveToDay }),
+    [moves, addMove, toggleMove, moveToDay],
+  )
 
   return <MovesContext.Provider value={store}>{children}</MovesContext.Provider>
 }
