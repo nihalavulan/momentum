@@ -1,0 +1,20 @@
+# Momentum: static SPA served by Caddy. Append to /etc/caddy/Caddyfile.
+# Caddy issues and renews the HTTPS certificate automatically once DNS points here.
+todo.flyziyara.com {
+    root * /var/www/momentum
+    encode gzip
+
+    # Hashed build assets never change: cache for a year.
+    @assets path /assets/*
+    header @assets Cache-Control "public, max-age=31536000, immutable"
+
+    # The app shell, service worker and manifest must always revalidate,
+    # so new deploys reach installed PWAs.
+    @shell path / /index.html /sw.js /registerSW.js /manifest.webmanifest
+    header @shell Cache-Control "no-cache"
+    header /manifest.webmanifest Content-Type "application/manifest+json"
+
+    # Single-page app: unknown paths fall back to index.html.
+    try_files {path} /index.html
+    file_server
+}
