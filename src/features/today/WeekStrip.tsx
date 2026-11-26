@@ -56,7 +56,7 @@ export function WeekStrip({
           const isToday = day === today
           const ratio = total ? done / total : 0
           const weekday = d.toLocaleDateString('en-GB', { weekday: 'short' })
-          const label = `${d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}${
+          const label = `${isToday ? 'Today, ' : ''}${d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}${
             total ? `, ${done} of ${total} done` : ''
           }`
 
@@ -67,9 +67,15 @@ export function WeekStrip({
                 onClick={() => onSelect(day)}
                 aria-pressed={isSelected}
                 aria-label={label}
-                className="group flex flex-col items-center gap-1.5 rounded-2xl px-1 py-1.5 outline-none focus-visible:bg-surface"
+                className={[
+                  'group flex flex-col items-center gap-1.5 rounded-2xl px-1.5 pt-2 pb-2.5 outline-none transition-colors duration-150',
+                  // Today: the whole column gets a soft primary background, selected or not.
+                  isToday ? 'bg-primary-soft' : 'focus-visible:bg-surface',
+                ].join(' ')}
               >
-                <span className={`text-[12px] font-medium ${isSelected ? 'text-ink' : 'text-ink-3'}`}>
+                <span
+                  className={`text-[12px] ${isToday ? 'font-semibold text-ink' : isSelected ? 'font-medium text-ink' : 'font-medium text-ink-3'}`}
+                >
                   {weekday.slice(0, 1)}
                   <span className="hidden lg:inline">{weekday.slice(1, 3)}</span>
                 </span>
@@ -99,7 +105,7 @@ export function WeekStrip({
                       isSelected
                         ? 'bg-ink font-semibold text-white'
                         : isToday
-                          ? 'font-bold text-primary'
+                          ? 'font-semibold text-ink'
                           : 'font-medium text-ink group-hover:bg-surface',
                     ].join(' ')}
                   >

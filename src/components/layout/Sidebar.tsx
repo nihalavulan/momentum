@@ -1,6 +1,7 @@
 import { brand } from '../../config/brand.ts'
 import { useMoves } from '../../features/moves/movesContext.ts'
 import { groupForToday, groupUndated } from '../../features/moves/moveRules.ts'
+import { AccountMenu } from '../../features/auth/AccountMenu.tsx'
 import { BrandSymbol } from '../ui/BrandSymbol.tsx'
 import { TABS, type TabId } from './tabs.ts'
 
@@ -47,7 +48,9 @@ export function Sidebar({ active, onSelect }: { active: TabId; onSelect: (id: Ta
         </ul>
       </nav>
 
-      <p className="mt-auto px-3 text-[13px] leading-snug text-ink-3">{brand.tagline}</p>
+      <div className="mt-auto">
+        <AccountMenu variant="row" />
+      </div>
     </aside>
   )
 }

@@ -19,6 +19,7 @@
   --color-ink-3: #b0b0b0;
   --color-line: #ebebeb;
   --color-surface: #f7f7f7;
+  --color-danger: #c13515;
 
   /* Figtree (bundled, works offline): round and geometric like the Rising M. */
   --font-sans: 'Figtree Variable', -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, 'Segoe UI', Roboto,

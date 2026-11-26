@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { labels } from '../../config/labels.ts'
 import { addDays, formatDayTitle, formatLongDate, formatRelativeDay, todayISO, type ISODate } from '../../lib/dates.ts'
-import { BrandSymbol } from '../../components/ui/BrandSymbol.tsx'
+import { AccountMenu } from '../auth/AccountMenu.tsx'
 import { PlusIcon } from '../../components/ui/icons.tsx'
 import { Toast } from '../../components/ui/Toast.tsx'
 import { useToast } from '../../components/ui/useToast.ts'
@@ -101,17 +101,21 @@ export function TodayView() {
                   {formatDayTitle(day, today)}
                 </h1>
               </div>
-              {isToday ? (
-                <BrandSymbol size={22} className="mt-1 text-primary lg:hidden" />
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setDay(today)}
-                  className="mt-1 h-9 shrink-0 rounded-full border border-ink/15 px-4 text-[14px] font-semibold text-ink outline-none hover:border-ink/40 focus-visible:ring-2 focus-visible:ring-primary/30"
-                >
-                  Back to today
-                </button>
-              )}
+              <div className="flex shrink-0 items-center gap-2">
+                {!isToday && (
+                  <button
+                    type="button"
+                    onClick={() => setDay(today)}
+                    className="h-9 shrink-0 rounded-full border border-ink/15 px-4 text-[14px] font-semibold text-ink outline-none hover:border-ink/40 focus-visible:ring-2 focus-visible:ring-primary/30"
+                  >
+                    Back to today
+                  </button>
+                )}
+                {/* Mobile: account lives here; desktop has it in the sidebar. */}
+                <div className="lg:hidden">
+                  <AccountMenu />
+                </div>
+              </div>
             </div>
             <p className="mt-2 text-[15px] text-ink-2">
               {total === 0 ? (

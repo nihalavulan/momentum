@@ -103,16 +103,16 @@ function DayCell({
         disabled={disabled}
         onClick={() => onSelect(day)}
         aria-pressed={isSelected}
-        aria-label={d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
+        aria-label={`${isToday ? 'Today, ' : ''}${d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}`}
         className={[
-          'grid size-10 place-items-center rounded-full text-[14px] tabular-nums outline-none transition-colors duration-150',
+          'relative grid size-10 place-items-center rounded-full text-[14px] tabular-nums outline-none transition-colors duration-150',
           'focus-visible:ring-2 focus-visible:ring-primary/30',
           isSelected
-            ? 'bg-ink font-semibold text-white'
-            : disabled
-              ? 'cursor-default text-ink-3/60'
-              : isToday
-                ? 'font-bold text-primary hover:bg-surface'
+            ? `bg-ink font-semibold text-white ${isToday ? 'ring-4 ring-primary-soft' : ''}`
+            : isToday
+              ? 'bg-primary-soft font-semibold text-ink'
+              : disabled
+                ? 'cursor-default text-ink-3/60'
                 : 'font-medium text-ink hover:bg-surface',
         ].join(' ')}
       >

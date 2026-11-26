@@ -194,22 +194,25 @@ export function Composer({
               No date
             </Chip>
 
-            <span aria-hidden className="mx-1 hidden h-5 w-px shrink-0 bg-line sm:block" />
-
-            <Chip
-              selected={arcId !== null}
-              open={panel === 'arc'}
-              onClick={() => togglePanel('arc')}
-              aria-expanded={panel === 'arc'}
-            >
-              <ArcsIcon size={15} strokeWidth={2} />
-              <span className="max-w-[11rem] truncate">{selectedArc?.title ?? labels.arc.singular}</span>
-              <ChevronDownIcon
-                size={13}
-                strokeWidth={2.4}
-                className={`transition-transform duration-150 ${panel === 'arc' ? 'rotate-180' : ''}`}
-              />
-            </Chip>
+            {activeArcs.length > 0 && (
+              <>
+                <span aria-hidden className="mx-1 hidden h-5 w-px shrink-0 bg-line sm:block" />
+                <Chip
+                  selected={arcId !== null}
+                  open={panel === 'arc'}
+                  onClick={() => togglePanel('arc')}
+                  aria-expanded={panel === 'arc'}
+                >
+                  <ArcsIcon size={15} strokeWidth={2} />
+                  <span className="max-w-[11rem] truncate">{selectedArc?.title ?? labels.arc.singular}</span>
+                  <ChevronDownIcon
+                    size={13}
+                    strokeWidth={2.4}
+                    className={`transition-transform duration-150 ${panel === 'arc' ? 'rotate-180' : ''}`}
+                  />
+                </Chip>
+              </>
+            )}
           </div>
 
           {panel === 'calendar' && (
