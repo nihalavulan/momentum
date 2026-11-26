@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { ComingSoonView } from './components/layout/ComingSoonView.tsx'
 import { Sidebar } from './components/layout/Sidebar.tsx'
 import { TabBar } from './components/layout/TabBar.tsx'
@@ -11,6 +11,9 @@ import { MovesProvider } from './features/moves/MovesProvider.tsx'
 import { MovesView } from './features/moves/MovesView.tsx'
 import { IntroCards } from './features/onboarding/IntroCards.tsx'
 import { TodayView } from './features/today/TodayView.tsx'
+import { SpacesProvider } from './features/spaces/SpacesProvider.tsx'
+import { SpacesSheet } from './features/spaces/components/SpacesSheet.tsx'
+import { OPEN_SPACES_EVENT } from './features/spaces/spacesContext.ts'
 
 export default function App() {
   return (
@@ -26,9 +29,11 @@ function Gate() {
   if (!ready) return null // reading the saved session takes a moment
   if (!user) return <SignInScreen />
   return (
-    <MovesProvider key={user.id} userKey={user.id}>
-      <Shell />
-    </MovesProvider>
+    <SpacesProvider key={user.id} userKey={user.id}>
+      <MovesProvider key={user.id} userKey={user.id}>
+        <Shell />
+      </MovesProvider>
+    </SpacesProvider>
   )
 }
 
@@ -44,6 +49,14 @@ function Shell() {
   const current = TABS.find((t) => t.id === tab) ?? TABS[0]
   const [introRequested, setIntroRequested] = useState(false)
   const showIntro = introRequested || !user?.introSeenAt
+  const [spacesOpen, setSpacesOpen] = useState(false)
+  const closeSpaces = useCallback(() => setSpacesOpen(false), [])
+
+  useEffect(() => {
+    const onOpen = () => setSpacesOpen(true)
+    window.addEventListener(OPEN_SPACES_EVENT, onOpen)
+    return () => window.removeEventListener(OPEN_SPACES_EVENT, onOpen)
+  }, [])
 
   useEffect(() => {
     const onShow = () => setIntroRequested(true)
@@ -66,6 +79,7 @@ function Shell() {
         </main>
       </div>
       <TabBar active={tab} onSelect={selectTab} />
+      {spacesOpen && <SpacesSheet onClose={closeSpaces} />}
       {showIntro && (
         <IntroCards
           onDone={() => {

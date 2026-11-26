@@ -11,6 +11,7 @@ import { useMoves } from './movesContext.ts'
 import { RescheduleSheet } from './components/RescheduleSheet.tsx'
 import type { Move } from './types.ts'
 import { haptic } from '../../lib/haptics.ts'
+import { useSpaces } from '../spaces/spacesContext.ts'
 import { groupUndated } from './moveRules.ts'
 
 /**
@@ -20,11 +21,17 @@ import { groupUndated } from './moveRules.ts'
  */
 export function MovesView() {
   const today = todayISO()
-  const { moves, addMove, toggleMove, moveToDay } = useMoves()
+  const { moves, addMove, toggleMove, moveToDay, setMoveSpace } = useMoves()
+  const { active: spaces, getSpace } = useSpaces()
+  const spaceOf = (m: Move) => {
+    const s = getSpace(m.spaceId)
+    return s && { name: s.name, color: s.color }
+  }
   const { arcs, getArc } = useArcs()
   const { open, done } = groupUndated(moves)
   const { toast, show, dismiss } = useToast()
   const [rescheduling, setRescheduling] = useState<Move | null>(null)
+  const reschedulingMove = rescheduling && (moves.find((m) => m.id === rescheduling.id) ?? rescheduling)
   const closeReschedule = useCallback(() => setRescheduling(null), [])
 
   const rescheduleTo = (move: Move, to: ISODate | null) => {
@@ -38,9 +45,9 @@ export function MovesView() {
     if (move && !move.done) show(`Done: ${move.title}`, () => toggleMove(id))
   }
 
-  const handleAdd = (title: string, date: ISODate | null, arcId: string | null) => {
+  const handleAdd = (title: string, date: ISODate | null, arcId: string | null, spaceId: string | null = null) => {
     haptic('light')
-    addMove(title, date, { arcId })
+    addMove(title, date, { arcId, spaceId })
     if (date !== null) show(`Added to ${formatDayTitle(date, today)}`)
   }
 
@@ -58,7 +65,7 @@ export function MovesView() {
       </header>
 
       <div className="mt-6 max-w-[720px]">
-        <Composer defaultDate={null} today={today} arcs={arcs} onAdd={handleAdd} />
+        <Composer defaultDate={null} today={today} arcs={arcs} onAdd={handleAdd} spaces={spaces} />
 
         <section className="mt-8">
           <h2 className="mb-3 text-[17px] font-semibold text-ink">No date</h2>
@@ -78,6 +85,7 @@ export function MovesView() {
                   }}
                   onToggle={handleToggle}
                   onReschedule={setRescheduling}
+                  space={spaceOf(m)}
                 />
               ))}
             </MoveList>
@@ -91,18 +99,21 @@ export function MovesView() {
         {done.length > 0 && (
           <DoneGroup count={done.length}>
             {done.map((m) => (
-              <MoveRow key={m.id} move={m} arcTitle={getArc(m.arcId)?.title} onToggle={handleToggle} />
+              <MoveRow key={m.id} move={m} arcTitle={getArc(m.arcId)?.title} onToggle={handleToggle} space={spaceOf(m)} />
             ))}
           </DoneGroup>
         )}
       </div>
 
-      {rescheduling && (
+      {reschedulingMove && (
         <RescheduleSheet
-          move={rescheduling}
+          move={reschedulingMove}
           today={today}
-          onPick={(to) => rescheduleTo(rescheduling, to)}
+          onPick={(to) => rescheduleTo(reschedulingMove, to)}
           onClose={closeReschedule}
+          spaces={spaces}
+          onPickSpace={(id) => setMoveSpace(reschedulingMove.id, id)}
+          spaceLockedBy={getArc(reschedulingMove.arcId)?.title}
         />
       )}
       <Toast toast={toast} onDismiss={dismiss} />

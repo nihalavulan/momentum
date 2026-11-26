@@ -3,6 +3,7 @@ import { useMoves } from '../../features/moves/movesContext.ts'
 import { groupForToday, groupUndated } from '../../features/moves/moveRules.ts'
 import { AccountMenu } from '../../features/auth/AccountMenu.tsx'
 import { BrandSymbol } from '../ui/BrandSymbol.tsx'
+import { SidebarSpaces } from '../../features/spaces/components/SidebarSpaces.tsx'
 import { TABS, type TabId } from './tabs.ts'
 
 /** Desktop navigation (hidden on mobile): brand, sections, and today's open count. */
@@ -47,6 +48,8 @@ export function Sidebar({ active, onSelect }: { active: TabId; onSelect: (id: Ta
           })}
         </ul>
       </nav>
+
+      <SidebarSpaces onShowToday={() => onSelect('today')} />
 
       <div className="mt-auto">
         <AccountMenu variant="row" />

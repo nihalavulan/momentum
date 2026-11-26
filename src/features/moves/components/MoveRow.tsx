@@ -3,6 +3,10 @@ import { CheckCircle } from '../../../components/ui/CheckCircle.tsx'
 import { ArrowRightIcon, CalendarIcon } from '../../../components/ui/icons.tsx'
 import { haptic } from '../../../lib/haptics.ts'
 import type { Move } from '../types.ts'
+import { SpaceDot } from '../../spaces/components/SpaceDot.tsx'
+import { TitleWithTags } from '../../spaces/components/TitleWithTags.tsx'
+import { useSpaces } from '../../spaces/spacesContext.ts'
+import { splitSpaceTags } from '../../spaces/spaceRules.ts'
 
 /** How long the check animation plays before the Move leaves the list. */
 const COMPLETE_DELAY_MS = 420
@@ -30,6 +34,7 @@ export function MoveRow({
   action,
   onToggle,
   onReschedule,
+  space,
 }: {
   move: Move
   arcTitle?: string
@@ -38,8 +43,11 @@ export function MoveRow({
   onToggle: (id: string) => void
   /** Opens the day picker for this Move. Always visible on mobile, on hover on desktop. */
   onReschedule?: (move: Move) => void
+  /** The Move's Space, shown first in the detail line (muted dot + grey name). */
+  space?: { name: string; color: string }
 }) {
   const [completing, setCompleting] = useState(false)
+  const { spaces } = useSpaces()
   const timer = useRef<number | undefined>(undefined)
 
   // Rows that just appeared (new Move, or just completed) ease in; the initial list doesn't.
@@ -63,7 +71,10 @@ export function MoveRow({
     timer.current = window.setTimeout(() => onToggle(move.id), prefersReducedMotion() ? 0 : COMPLETE_DELAY_MS)
   }
 
-  const details = [arcTitle, meta].filter(Boolean)
+  // The #tag pill in the title already says which Space; don't repeat it below.
+  const tagShowsSpace = splitSpaceTags(move.title, spaces).some((p) => p.space && p.space.id === move.spaceId)
+  if (tagShowsSpace) space = undefined
+  const details = [space?.name, arcTitle, meta].filter(Boolean)
 
   return (
     <li className={`group/row flex items-start gap-3.5 px-4 ${fresh ? 'row-enter' : ''}`}>
@@ -85,10 +96,17 @@ export function MoveRow({
               move.done ? 'line-through decoration-ink-3/70' : '',
             ].join(' ')}
           >
-            {move.title}
+            <TitleWithTags title={move.title} spaces={spaces} muted={checked} />
           </p>
           {details.length > 0 && (
             <p className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[13px] leading-[18px] text-ink-2">
+              {space && (
+                <>
+                  <SpaceDot color={space.color} size={6} className={checked ? 'opacity-50' : ''} />
+                  <span className="truncate">{space.name}</span>
+                </>
+              )}
+              {space && (arcTitle || meta) && <span aria-hidden className="text-ink-3">/</span>}
               {arcTitle && (
                 <>
                   <span aria-hidden className={`size-1.5 shrink-0 rounded-full ${checked ? 'bg-ink-3' : 'bg-primary'}`} />

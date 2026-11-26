@@ -6,4 +6,6 @@ export interface Arc {
   title: string
   startDate: ISODate
   endDate: ISODate
+  /** The Space this Arc belongs to. Its Moves use the same Space. */
+  spaceId?: string | null
 }

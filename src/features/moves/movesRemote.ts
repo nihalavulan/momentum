@@ -12,11 +12,12 @@ interface MoveRow {
   done: boolean
   done_at: string | null
   arc_id: string | null
+  space_id: string | null
   source: 'app' | 'ai'
   created_at: string
 }
 
-const COLUMNS = 'id,title,date,done,done_at,arc_id,source,created_at'
+const COLUMNS = 'id,title,date,done,done_at,arc_id,space_id,source,created_at'
 
 function fromRow(r: MoveRow): Move {
   return {
@@ -26,6 +27,7 @@ function fromRow(r: MoveRow): Move {
     done: r.done,
     doneAt: r.done_at,
     arcId: r.arc_id,
+    spaceId: r.space_id,
     createdAt: r.created_at,
     source: r.source,
   }
@@ -39,6 +41,7 @@ function toRow(m: Move): MoveRow {
     done: m.done,
     done_at: m.doneAt,
     arc_id: m.arcId ?? null,
+    space_id: m.spaceId ?? null,
     source: m.source,
     created_at: m.createdAt,
   }

@@ -13,6 +13,8 @@ export interface Move {
   doneAt: string | null
   /** The Arc this Move belongs to, if any. */
   arcId?: string | null
+  /** The Space this Move belongs to. Inside an Arc, it's the Arc's Space. */
+  spaceId?: string | null
   /** ISO timestamp. */
   createdAt: string
   source: ItemSource

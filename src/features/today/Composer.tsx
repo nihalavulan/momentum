@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode, type RefObject } from 'react'
+import { useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { labels } from '../../config/labels.ts'
 import {
   addDays,
@@ -16,8 +16,21 @@ import type { Arc } from '../arcs/types.ts'
 import { MOVE_TITLE_MAX, normalizeMoveTitle } from '../moves/moveRules.ts'
 import { parseMoveDate } from '../moves/parseMoveDate.ts'
 import { haptic } from '../../lib/haptics.ts'
+import { SpaceChoice } from '../spaces/components/SpaceChips.tsx'
+import { SpaceDot } from '../spaces/components/SpaceDot.tsx'
+import {
+  effectiveSpaceId,
+  extractSpaceTag,
+  matchSpaces,
+  replaceSpaceTag,
+  spaceTagText,
+  splitSpaceTags,
+  typingSpaceTag,
+} from '../spaces/spaceRules.ts'
+import { TitleWithTags } from '../spaces/components/TitleWithTags.tsx'
+import type { Space } from '../spaces/types.ts'
 
-type Panel = 'calendar' | 'arc' | null
+type Panel = 'calendar' | 'arc' | 'space' | null
 
 /**
  * Add a Move: title, which day (or no date), and which Arc.
@@ -37,14 +50,20 @@ export function Composer({
   inputRef,
   autoFocus = false,
   alwaysShowOptions = false,
+  spaces = [],
+  defaultSpaceId = null,
 }: {
   defaultDate: ISODate | null
   today: ISODate
   arcs: Arc[]
-  onAdd: (title: string, date: ISODate | null, arcId: string | null) => void
+  onAdd: (title: string, date: ISODate | null, arcId: string | null, spaceId: string | null) => void
   inputRef?: RefObject<HTMLInputElement | null>
   autoFocus?: boolean
   alwaysShowOptions?: boolean
+  /** Active Spaces: for the Space chip and #tag suggestions. */
+  spaces?: Space[]
+  /** Space new Moves start in (e.g. the one Today is filtered to). */
+  defaultSpaceId?: string | null
 }) {
   const [title, setTitle] = useState('')
   const [date, setDate] = useState<ISODate | null>(defaultDate)
@@ -53,8 +72,27 @@ export function Composer({
   const [panel, setPanel] = useState<Panel>(null)
   const [ignoredPhrase, setIgnoredPhrase] = useState<string | null>(null)
   const localInput = useRef<HTMLInputElement | null>(null)
+  const [spaceId, setSpaceId] = useState<string | null>(defaultSpaceId)
+  const [highlight, setHighlight] = useState(0)
+  const [dismissedTagAt, setDismissedTagAt] = useState<number | null>(null)
 
-  const parsed = parseMoveDate(title, today)
+  // "#flyz" in the title: a tag naming one Space assigns it and stays in the title as a pill.
+  const tagged = extractSpaceTag(title, spaces)
+  const baseTitle = tagged ? tagged.title : title
+  const typingTag = typingSpaceTag(title)
+  const suggestions =
+    typingTag && typingTag.start !== dismissedTagAt ? matchSpaces(spaces, typingTag.query).slice(0, 5) : []
+
+  // #Space tags show as coloured pills: the typed text is drawn by a copy
+  // behind the (then see-through) field, kept scrolled in step with it.
+  const showTagPills = splitSpaceTags(title, spaces).some((p) => p.space)
+  const mirror = useRef<HTMLDivElement>(null)
+  const syncMirror = () => {
+    if (mirror.current && localInput.current) mirror.current.scrollLeft = localInput.current.scrollLeft
+  }
+  useLayoutEffect(syncMirror)
+
+  const parsed = parseMoveDate(baseTitle, today)
   const useParsed = parsed !== null && parsed.phrase.toLowerCase() !== ignoredPhrase
   const effectiveDate = useParsed ? parsed.date : date
 
@@ -72,6 +110,20 @@ export function Composer({
 
   const activeArcs = arcs.filter((a) => isArcActive(a, today) || a.id === arcId)
   const selectedArc = arcs.find((a) => a.id === arcId)
+  // An Arc decides the Space of its Moves (same rule as the database).
+  const finalSpaceId = effectiveSpaceId({ arcId, spaceId: tagged?.spaceId ?? spaceId }, arcs)
+  const spaceLocked = selectedArc !== undefined
+  const selectedSpace = spaces.find((s) => s.id === finalSpaceId)
+
+  const pickSuggestion = (space: Space) => {
+    if (!typingTag) return
+    haptic('selection')
+    // The tag stays in the title, written out in full, and shows as a pill.
+    setTitle(`${replaceSpaceTag(title, typingTag.start, spaceTagText(space.name))} `)
+    setSpaceId(space.id)
+    setHighlight(0)
+    localInput.current?.focus()
+  }
 
   const focusTitle = () => localInput.current?.focus()
 
@@ -92,9 +144,11 @@ export function Composer({
       }}
       onSubmit={(e) => {
         e.preventDefault()
-        const clean = normalizeMoveTitle(useParsed ? parsed.title : title)
+        const clean = normalizeMoveTitle(useParsed ? parsed.title : baseTitle)
         if (!clean) return
-        onAdd(clean, effectiveDate, arcId)
+        onAdd(clean, effectiveDate, arcId, finalSpaceId)
+        if (!spaceLocked) setSpaceId(finalSpaceId)
+        setDismissedTagAt(null)
         setTitle('')
         setIgnoredPhrase(null)
         setPanel(null)
@@ -111,7 +165,22 @@ export function Composer({
         >
           <PlusIcon size={14} strokeWidth={2.4} />
         </span>
+        <div className="relative flex min-w-0 flex-1">
+        {showTagPills && (
+          <div
+            ref={mirror}
+            aria-hidden
+            className="pointer-events-none absolute inset-0 flex items-center overflow-hidden text-[16px] whitespace-pre text-ink"
+          >
+            <span className="pr-1">
+              <TitleWithTags title={title} spaces={spaces} fit="exact" />
+            </span>
+          </div>
+        )}
         <input
+          onScroll={syncMirror}
+          onSelect={syncMirror}
+          onKeyUp={syncMirror}
           ref={(el) => {
             localInput.current = el
             if (inputRef) inputRef.current = el
@@ -119,9 +188,28 @@ export function Composer({
           value={title}
           onChange={(e) => {
             setTitle(e.target.value)
+            setHighlight(0)
             if (!e.target.value) setIgnoredPhrase(null)
           }}
           onKeyDown={(e) => {
+            if (suggestions.length > 0 && typingTag) {
+              if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault()
+                const by = e.key === 'ArrowDown' ? 1 : -1
+                setHighlight((h) => (h + by + suggestions.length) % suggestions.length)
+                return
+              }
+              if (e.key === 'Enter' || e.key === 'Tab') {
+                e.preventDefault()
+                pickSuggestion(suggestions[Math.min(highlight, suggestions.length - 1)])
+                return
+              }
+              if (e.key === 'Escape') {
+                e.preventDefault()
+                setDismissedTagAt(typingTag.start)
+                return
+              }
+            }
             if (e.key !== 'Escape') return
             if (panel) return setPanel(null)
             setTitle('')
@@ -134,8 +222,9 @@ export function Composer({
           autoComplete="off"
           aria-label={`Add a ${labels.move.singular}`}
           placeholder={`Add a ${labels.move.singular}, e.g. "Call supplier fri"`}
-          className="h-14 min-w-0 flex-1 bg-transparent text-[16px] text-ink outline-none placeholder:text-ink-3"
+          className={`relative h-14 min-w-0 flex-1 bg-transparent text-[16px] outline-none placeholder:text-ink-3 ${showTagPills ? 'text-transparent caret-ink' : 'text-ink'}`}
         />
+        </div>
         {hasText ? (
           <button
             type="submit"
@@ -154,6 +243,31 @@ export function Composer({
           )
         )}
       </div>
+
+      {suggestions.length > 0 && (
+        <ul
+          role="listbox"
+          aria-label={`Matching ${labels.space.plural}`}
+          className="fade-enter mx-2 mb-2 rounded-xl border border-line bg-white p-1 shadow-[0_6px_20px_rgba(0,0,0,0.06)]"
+        >
+          {suggestions.map((s, i) => (
+            <li key={s.id} role="option" aria-selected={i === highlight}>
+              <button
+                type="button"
+                // Keep focus in the title field while picking.
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => pickSuggestion(s)}
+                onMouseEnter={() => setHighlight(i)}
+                className={`flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-left text-[15px] text-ink outline-none ${i === highlight ? 'bg-surface' : ''}`}
+              >
+                <SpaceDot color={s.color} />
+                <span className="min-w-0 flex-1 truncate">{s.name}</span>
+                {i === highlight && <span className="hidden text-[12px] text-ink-3 lg:inline">Enter</span>}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
 
       {useParsed && (
         <div className="fade-enter -mt-1 flex items-center gap-2 pr-4 pb-3 pl-[52px] text-[13px]" aria-live="polite">
@@ -214,6 +328,26 @@ export function Composer({
                 </Chip>
               </>
             )}
+
+            {(spaces.length > 0 || selectedSpace) && (
+              <>
+                <span aria-hidden className="mx-1 hidden h-5 w-px shrink-0 bg-line sm:block" />
+                <Chip
+                  selected={finalSpaceId !== null}
+                  open={panel === 'space'}
+                  onClick={() => togglePanel('space')}
+                  aria-expanded={panel === 'space'}
+                >
+                  {selectedSpace && <SpaceDot color={selectedSpace.color} />}
+                  <span className="max-w-[11rem] truncate">{selectedSpace?.name ?? labels.space.singular}</span>
+                  <ChevronDownIcon
+                    size={13}
+                    strokeWidth={2.4}
+                    className={`transition-transform duration-150 ${panel === 'space' ? 'rotate-180' : ''}`}
+                  />
+                </Chip>
+              </>
+            )}
           </div>
 
           {panel === 'calendar' && (
@@ -226,6 +360,28 @@ export function Composer({
                   focusTitle()
                 }}
               />
+            </div>
+          )}
+
+          {panel === 'space' && (
+            <div className="fade-enter border-t border-line px-4 py-3">
+              {spaceLocked ? (
+                <p className="text-[13px] text-ink-2">
+                  {labels.move.plural} in this {labels.arc.singular} use its {labels.space.singular}.
+                </p>
+              ) : (
+                <SpaceChoice
+                  spaces={spaces}
+                  selected={finalSpaceId}
+                  onSelect={(id) => {
+                    setSpaceId(id)
+                    // A manual choice wins over a #tag still in the title.
+                    if (tagged) setTitle(tagged.title)
+                    setPanel(null)
+                    focusTitle()
+                  }}
+                />
+              )}
             </div>
           )}
 

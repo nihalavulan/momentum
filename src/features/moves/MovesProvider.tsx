@@ -5,6 +5,8 @@ import { MovesContext, type MovesStore } from './movesContext.ts'
 import { normalizeMoveTitle } from './moveRules.ts'
 import { fetchMoves, saveMoves } from './movesRemote.ts'
 import type { Move } from './types.ts'
+import { useArcs } from '../arcs/useArcs.ts'
+import { effectiveSpaceId } from '../spaces/spaceRules.ts'
 
 const SAVE_DELAY_MS = 300
 const RETRY_MS = 15_000
@@ -28,6 +30,7 @@ export function MovesProvider({ userKey, children }: { userKey: string; children
   const saving = useRef(false)
   const timer = useRef<number | undefined>(undefined)
   const flushRef = useRef<() => Promise<void>>(async () => {})
+  const { arcs } = useArcs()
 
   const schedule = useCallback((delay: number) => {
     window.clearTimeout(timer.current)
@@ -103,7 +106,11 @@ export function MovesProvider({ userKey, children }: { userKey: string; children
   )
 
   const addMove = useCallback(
-    (rawTitle: string, date: ISODate | null = todayISO(), options?: { arcId?: string | null }) => {
+    (
+      rawTitle: string,
+      date: ISODate | null = todayISO(),
+      options?: { arcId?: string | null; spaceId?: string | null },
+    ) => {
       const title = normalizeMoveTitle(rawTitle)
       if (!title) return null
       const move: Move = {
@@ -113,13 +120,14 @@ export function MovesProvider({ userKey, children }: { userKey: string; children
         done: false,
         doneAt: null,
         arcId: options?.arcId ?? null,
+        spaceId: effectiveSpaceId({ arcId: options?.arcId, spaceId: options?.spaceId }, arcs),
         createdAt: new Date().toISOString(),
         source: 'app',
       }
       change(move.id, (prev) => [...prev, move])
       return move
     },
-    [change],
+    [change, arcs],
   )
 
   const toggleMove = useCallback(
@@ -138,9 +146,20 @@ export function MovesProvider({ userKey, children }: { userKey: string; children
     [change],
   )
 
+  const setMoveSpace = useCallback(
+    (id: string, spaceId: string | null) => {
+      const move = movesRef.current.find((m) => m.id === id)
+      if (!move) return
+      const next = effectiveSpaceId({ arcId: move.arcId, spaceId }, arcs)
+      if ((move.spaceId ?? null) === next) return
+      change(id, (prev) => prev.map((m) => (m.id === id ? { ...m, spaceId: next } : m)))
+    },
+    [change, arcs],
+  )
+
   const store = useMemo<MovesStore>(
-    () => ({ moves, addMove, toggleMove, moveToDay }),
-    [moves, addMove, toggleMove, moveToDay],
+    () => ({ moves, addMove, toggleMove, moveToDay, setMoveSpace }),
+    [moves, addMove, toggleMove, moveToDay, setMoveSpace],
   )
 
   return <MovesContext.Provider value={store}>{children}</MovesContext.Provider>

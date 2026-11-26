@@ -4,6 +4,8 @@ import { addDays, formatRelativeDay, nextMonday, upcomingWeekend, type ISODate }
 import { haptic } from '../../../lib/haptics.ts'
 import { MonthCalendar } from '../../../components/ui/MonthCalendar.tsx'
 import type { Move } from '../types.ts'
+import { SpaceChoice } from '../../spaces/components/SpaceChips.tsx'
+import type { Space } from '../../spaces/types.ts'
 
 /**
  * Pick a new day for one Move: quick chips (Today, Tomorrow, Weekend, Next
@@ -17,11 +19,20 @@ export function RescheduleSheet({
   today,
   onPick,
   onClose,
+  spaces = [],
+  onPickSpace,
+  spaceLockedBy,
 }: {
   move: Move
   today: ISODate
   onPick: (date: ISODate | null) => void
   onClose: () => void
+  /** Active Spaces to choose from. The Space section shows when there are any. */
+  spaces?: Space[]
+  /** Changes the Move's Space; the sheet stays open. */
+  onPickSpace?: (spaceId: string | null) => void
+  /** Title of the Arc that sets this Move's Space (then it can't be changed here). */
+  spaceLockedBy?: string
 }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
@@ -58,7 +69,7 @@ export function RescheduleSheet({
       className="fixed inset-0 z-40 flex items-end justify-center lg:items-center"
     >
       <button type="button" aria-label="Close" onClick={onClose} className="fade-enter absolute inset-0 bg-black/30" />
-      <div className="reschedule-enter relative w-full max-w-[400px] rounded-t-[28px] bg-white px-5 pt-3 pb-[calc(env(safe-area-inset-bottom)+20px)] shadow-[0_-8px_40px_rgba(0,0,0,0.16)] lg:rounded-[28px] lg:pb-5 lg:shadow-[0_16px_48px_rgba(0,0,0,0.18)]">
+      <div className="reschedule-enter relative max-h-[92dvh] w-full max-w-[400px] overflow-y-auto rounded-t-[28px] bg-white px-5 pt-3 pb-[calc(env(safe-area-inset-bottom)+20px)] shadow-[0_-8px_40px_rgba(0,0,0,0.16)] lg:rounded-[28px] lg:pb-5 lg:shadow-[0_16px_48px_rgba(0,0,0,0.18)]">
         <span aria-hidden className="mx-auto mb-3 block h-1 w-9 rounded-full bg-line lg:hidden" />
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -88,6 +99,19 @@ export function RescheduleSheet({
         <div className="mt-4 flex justify-center border-t border-line pt-4">
           <MonthCalendar selected={move.date} today={today} onSelect={(d) => pick(d)} />
         </div>
+
+        {onPickSpace && (spaces.length > 0 || move.spaceId) && (
+          <div className="mt-4 border-t border-line pt-4">
+            <p className="mb-2.5 text-[14px] font-semibold text-ink">{labels.space.singular}</p>
+            {spaceLockedBy ? (
+              <p className="text-[13px] text-ink-2">
+                Set by the {labels.arc.singular} “{spaceLockedBy}”.
+              </p>
+            ) : (
+              <SpaceChoice spaces={spaces} selected={move.spaceId ?? null} onSelect={onPickSpace} />
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

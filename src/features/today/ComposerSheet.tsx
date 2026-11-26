@@ -11,7 +11,8 @@ export function ComposerSheet({
   ...composer
 }: { onClose: () => void } & Omit<ComponentProps<typeof Composer>, 'autoFocus' | 'alwaysShowOptions'>) {
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
+    // Escape already handled inside (e.g. closing #Space suggestions) doesn't close the sheet.
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && !e.defaultPrevented && onClose()
     window.addEventListener('keydown', onKey)
     const { overflow } = document.body.style
     document.body.style.overflow = 'hidden'

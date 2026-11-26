@@ -8,6 +8,7 @@ export const labels = {
   arc: { singular: 'Arc', plural: 'Arcs' },
   streak: { singular: 'Streak', plural: 'Streaks' },
   spark: { singular: 'Spark', plural: 'Sparks' },
+  space: { singular: 'Space', plural: 'Spaces' },
 } as const
 
 export type FeatureKey = keyof typeof labels

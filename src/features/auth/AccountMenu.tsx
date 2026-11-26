@@ -1,5 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { useAuth } from './authContext.ts'
+import { labels } from '../../config/labels.ts'
+import { openSpacesManager } from '../spaces/spacesContext.ts'
 
 /** Ask the app shell to show the intro again (listened to in App). */
 export const SHOW_INTRO_EVENT = 'momentum:show-intro'
@@ -62,6 +64,14 @@ export function AccountMenu({ variant = 'avatar' }: { variant?: 'avatar' | 'row'
           <p className="truncate px-3 pt-2 pb-3 text-[13px] text-ink-2">
             Signed in as <span className="font-semibold text-ink">{user.email}</span>
           </p>
+          <MenuItem
+            onClick={() => {
+              setOpen(false)
+              openSpacesManager()
+            }}
+          >
+            {labels.space.plural}
+          </MenuItem>
           <MenuItem
             onClick={() => {
               setOpen(false)

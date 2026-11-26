@@ -11,6 +11,10 @@ import { useArcs } from '../arcs/useArcs.ts'
 import { MoveList, MoveRow } from '../moves/components/MoveRow.tsx'
 import { RescheduleSheet } from '../moves/components/RescheduleSheet.tsx'
 import { haptic } from '../../lib/haptics.ts'
+import { useAuth } from '../auth/authContext.ts'
+import { FirstSpacePrompt, SpaceFilter } from '../spaces/components/SpaceChips.tsx'
+import { useSpaces } from '../spaces/spacesContext.ts'
+import { useSpaceFilter } from '../spaces/useSpaceFilter.ts'
 import { useMoves } from '../moves/movesContext.ts'
 import { dayProgress, groupForDay } from '../moves/moveRules.ts'
 import type { Move } from '../moves/types.ts'
@@ -32,15 +36,27 @@ export function TodayView() {
   const [day, setDay] = useState<ISODate>(today)
   const isToday = day === today
 
-  const { moves, addMove, toggleMove, moveToDay } = useMoves()
+  const { moves, addMove, toggleMove, moveToDay, setMoveSpace } = useMoves()
   const { arcs, getArc } = useArcs()
-  const { overdue, open, done, total } = groupForDay(moves, day, today)
-  const progressFor = (d: ISODate) => dayProgress(moves, d, today)
+  const { active: spaces, getSpace } = useSpaces()
+  const { user } = useAuth()
+  const [spaceFilter, setSpaceFilter] = useSpaceFilter()
+  // Everything on this page (lists, counts, week rings) follows the Space filter.
+  const visibleMoves = spaceFilter ? moves.filter((m) => m.spaceId === spaceFilter) : moves
+  const { overdue, open, done, total } = groupForDay(visibleMoves, day, today)
+  const progressFor = (d: ISODate) => dayProgress(visibleMoves, d, today)
+  // No need to repeat the Space on every row while filtered to it.
+  const spaceOf = (m: Move) => {
+    const s = spaceFilter ? undefined : getSpace(m.spaceId)
+    return s && { name: s.name, color: s.color }
+  }
 
   const { toast, show, dismiss } = useToast()
   const [sheetOpen, setSheetOpen] = useState(false)
   const closeSheet = useCallback(() => setSheetOpen(false), [setSheetOpen])
   const [rescheduling, setRescheduling] = useState<Move | null>(null)
+  // The sheet stays open while the Space changes, so read the live Move.
+  const reschedulingMove = rescheduling && (moves.find((m) => m.id === rescheduling.id) ?? rescheduling)
   const closeReschedule = useCallback(() => setRescheduling(null), [])
   const composerInput = useRef<HTMLInputElement>(null)
   const barHidden = useHideOnScroll()
@@ -94,15 +110,20 @@ export function TodayView() {
     show(`${previous.length} moved to today`, () => previous.forEach(([id, date]) => moveToDay(id, date)))
   }
 
-  const handleAdd = (title: string, date: ISODate | null, arcId: string | null) => {
+  const handleAdd = (title: string, date: ISODate | null, arcId: string | null, spaceId: string | null = null) => {
     haptic('light')
-    addMove(title, date, { arcId })
+    const added = addMove(title, date, { arcId, spaceId })
+    // Filtered to another Space: say where it went, since it won't show here.
+    if (added && spaceFilter && added.spaceId !== spaceFilter) {
+      const where = getSpace(added.spaceId)?.name ?? `no ${labels.space.singular}`
+      return show(`Added to ${where}`)
+    }
     // Say where it went when it won't appear in the list you're looking at.
     if (date === null) show(`Added with no date. Find it in ${labels.move.plural}.`)
     else if (date !== day) show(`Added to ${formatDayTitle(date, today)}`)
   }
 
-  const composerProps = { defaultDate: day, today, arcs, onAdd: handleAdd }
+  const composerProps = { defaultDate: day, today, arcs, onAdd: handleAdd, spaces, defaultSpaceId: spaceFilter }
   const nextDay = isToday ? tomorrow : addDays(day, 1)
   const nextLabel = isToday ? 'Tomorrow' : 'Next day'
   const nothingLeft = overdue.length === 0 && open.length === 0
@@ -152,8 +173,16 @@ export function TodayView() {
             <WeekStrip selected={day} today={today} progressFor={progressFor} onSelect={selectDay} />
           </div>
 
+          <div className="mt-5">
+            {spaces.length > 0 ? (
+              <SpaceFilter spaces={spaces} selected={spaceFilter} onSelect={setSpaceFilter} />
+            ) : (
+              user && <FirstSpacePrompt userKey={user.id} />
+            )}
+          </div>
+
           <div className="mt-6 hidden lg:block">
-            <Composer key={day} {...composerProps} inputRef={composerInput} />
+            <Composer key={`${day}:${spaceFilter ?? 'all'}`} {...composerProps} inputRef={composerInput} />
           </div>
 
           {overdue.length > 0 && (
@@ -168,6 +197,7 @@ export function TodayView() {
                     action={{ label: 'Today', onClick: () => reschedule(m, today) }}
                     onToggle={handleToggle}
                     onReschedule={setRescheduling}
+                    space={spaceOf(m)}
                   />
                 ))}
               </EarlierCard>
@@ -185,6 +215,7 @@ export function TodayView() {
                     action={{ label: nextLabel, onClick: () => reschedule(m, nextDay) }}
                     onToggle={handleToggle}
                     onReschedule={setRescheduling}
+                    space={spaceOf(m)}
                   />
                 ))}
               </MoveList>
@@ -213,7 +244,13 @@ export function TodayView() {
           {done.length > 0 && (
             <DoneGroup count={done.length}>
               {done.map((m) => (
-                <MoveRow key={m.id} move={m} arcTitle={getArc(m.arcId)?.title} onToggle={handleToggle} />
+                <MoveRow
+                  key={m.id}
+                  move={m}
+                  arcTitle={getArc(m.arcId)?.title}
+                  onToggle={handleToggle}
+                  space={spaceOf(m)}
+                />
               ))}
             </DoneGroup>
           )}
@@ -226,7 +263,7 @@ export function TodayView() {
         <aside className="hidden space-y-10 pt-12 xl:block">
           <ArcsInProgress arcs={arcs} moves={moves} today={today} layout="stack" />
           {isToday && (
-            <UpNext day={tomorrow} today={today} moves={moves} getArc={getArc} onOpen={() => selectDay(tomorrow)} />
+            <UpNext day={tomorrow} today={today} moves={visibleMoves} getArc={getArc} onOpen={() => selectDay(tomorrow)} />
           )}
         </aside>
       </div>
@@ -250,12 +287,15 @@ export function TodayView() {
       </button>
 
       {sheetOpen && <ComposerSheet {...composerProps} onClose={closeSheet} />}
-      {rescheduling && (
+      {reschedulingMove && (
         <RescheduleSheet
-          move={rescheduling}
+          move={reschedulingMove}
           today={today}
-          onPick={(to) => rescheduleTo(rescheduling, to)}
+          onPick={(to) => rescheduleTo(reschedulingMove, to)}
           onClose={closeReschedule}
+          spaces={spaces}
+          onPickSpace={(id) => setMoveSpace(reschedulingMove.id, id)}
+          spaceLockedBy={getArc(reschedulingMove.arcId)?.title}
         />
       )}
       <Toast toast={toast} onDismiss={dismiss} />
