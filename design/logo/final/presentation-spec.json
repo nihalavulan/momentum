@@ -1,0 +1,32 @@
+{
+  "brand": "Momentum",
+  "tagline": "Plan your day. Keep your momentum.",
+  "brief": "A fast, simple, mobile-first personal planner for daily Moves, Arcs, Streaks and Sparks. It should feel instant, focused and forward-moving, never busy.",
+  "adjectives": ["fast", "forward", "focused", "light"],
+  "criteria": "Success: avoids checkbox and calendar clichés, reads at 16 px as a favicon, makes a strong home-screen icon, works in one colour.",
+  "industry": "consumer-app",
+  "nav": ["Today", "Arcs", "Streaks"],
+  "brand_color": "#FF5A1F",
+  "greyscale": false,
+  "designer": "Momentum",
+  "round": 2,
+  "concepts": [
+    {
+      "name": "Rising M",
+      "symbol": "momentum-symbol.svg",
+      "lockup": "momentum-horizontal.svg",
+      "symbol_on_tile": "momentum-symbol-reversed.svg",
+      "lockup_on_dark": "momentum-horizontal-reversed.svg",
+      "tile_color": "#FF5A1F",
+      "idea": "An M whose right peak climbs higher, with a checkmark hidden in its stroke.",
+      "rationale": [
+        "Carries the name and works alone as an app icon",
+        "The climbing peak says each day builds on the last",
+        "The hidden check nods to done Moves without a checkbox cliché",
+        "Monoline with round ends: same construction as the wordmark"
+      ]
+    }
+  ],
+  "recommendation": "Rising M: white on #FF5A1F for the app icon, orange on white elsewhere.",
+  "next_steps": ["Use in the app (icon, favicon, header)", "Trademark search before any public launch"]
+}

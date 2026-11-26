@@ -1,0 +1,20 @@
+import { createContext, useContext } from 'react'
+import type { ISODate } from '../../lib/dates.ts'
+import type { Move } from './types.ts'
+
+/** The contract every Moves data source must meet (in-memory now, PowerSync later). */
+export interface MovesStore {
+  moves: Move[]
+  /** Adds a Move (today by default). Returns null if the title is empty. */
+  addMove: (title: string, date?: ISODate) => Move | null
+  /** Marks a Move done, or not done again. */
+  toggleMove: (id: string) => void
+}
+
+export const MovesContext = createContext<MovesStore | null>(null)
+
+export function useMoves(): MovesStore {
+  const store = useContext(MovesContext)
+  if (!store) throw new Error('useMoves must be used inside <MovesProvider>')
+  return store
+}
