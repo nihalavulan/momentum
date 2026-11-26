@@ -1,6 +1,6 @@
 import { brand } from '../../config/brand.ts'
 import { useMoves } from '../../features/moves/movesContext.ts'
-import { groupForToday } from '../../features/moves/moveRules.ts'
+import { groupForToday, groupUndated } from '../../features/moves/moveRules.ts'
 import { BrandSymbol } from '../ui/BrandSymbol.tsx'
 import { TABS, type TabId } from './tabs.ts'
 
@@ -8,7 +8,10 @@ import { TABS, type TabId } from './tabs.ts'
 export function Sidebar({ active, onSelect }: { active: TabId; onSelect: (id: TabId) => void }) {
   const { moves } = useMoves()
   const g = groupForToday(moves)
-  const counts: Partial<Record<TabId, number>> = { today: g.overdue.length + g.open.length }
+  const counts: Partial<Record<TabId, number>> = {
+    today: g.overdue.length + g.open.length,
+    moves: groupUndated(moves).open.length,
+  }
 
   return (
     <aside className="fixed inset-y-0 left-0 z-20 hidden w-64 flex-col border-r border-line bg-white px-4 pt-7 pb-6 lg:flex">

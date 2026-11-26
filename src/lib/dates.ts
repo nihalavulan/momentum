@@ -89,3 +89,16 @@ export function formatDateRange(start: ISODate, end: ISODate): string {
 export function daysBetween(from: ISODate, to: ISODate): number {
   return Math.round((parseISODate(to).getTime() - parseISODate(from).getTime()) / 86_400_000)
 }
+
+/** Saturday of this weekend (today if it's already Saturday or Sunday). */
+export function upcomingWeekend(today: ISODate = todayISO()): ISODate {
+  const dow = parseISODate(today).getDay()
+  if (dow === 6 || dow === 0) return today
+  return addDays(today, 6 - dow)
+}
+
+/** Monday of next week (never today). */
+export function nextMonday(today: ISODate = todayISO()): ISODate {
+  const dow = parseISODate(today).getDay()
+  return addDays(today, ((1 - dow + 7) % 7) || 7)
+}

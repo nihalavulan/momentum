@@ -105,3 +105,11 @@ export const CloseIcon: Icon = (p) => (
     <path d="M6.5 6.5l11 11M17.5 6.5l-11 11" />
   </Svg>
 )
+
+/** Pick a date: a simple page with one rule. */
+export const CalendarIcon: Icon = (p) => (
+  <Svg {...p}>
+    <rect x="4" y="5.5" width="16" height="14.5" rx="3" />
+    <path d="M4 10h16M8.5 3.5v3M15.5 3.5v3" />
+  </Svg>
+)

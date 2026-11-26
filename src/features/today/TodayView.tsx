@@ -77,9 +77,11 @@ export function TodayView() {
     show(`${previous.length} moved to today`, () => previous.forEach(([id, date]) => moveToDay(id, date)))
   }
 
-  const handleAdd = (title: string, date: ISODate, arcId: string | null) => {
+  const handleAdd = (title: string, date: ISODate | null, arcId: string | null) => {
     addMove(title, date, { arcId })
-    if (date !== day) show(`Added to ${formatDayTitle(date, today).toLowerCase()}`)
+    // Say where it went when it won't appear in the list you're looking at.
+    if (date === null) show(`Added with no date. Find it in ${labels.move.plural}.`)
+    else if (date !== day) show(`Added to ${formatDayTitle(date, today)}`)
   }
 
   const composerProps = { defaultDate: day, today, arcs, onAdd: handleAdd }
@@ -140,7 +142,7 @@ export function TodayView() {
                     key={m.id}
                     move={m}
                     arcTitle={getArc(m.arcId)?.title}
-                    meta={formatRelativeDay(m.date, today)}
+                    meta={m.date ? formatRelativeDay(m.date, today) : undefined}
                     action={{ label: 'Today', onClick: () => reschedule(m, today) }}
                     onToggle={handleToggle}
                   />

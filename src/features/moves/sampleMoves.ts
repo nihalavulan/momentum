@@ -103,6 +103,25 @@ export function createSampleMoves(): Move[] {
       createdAt: at(addDays(today, -4), '10:00:00'),
       source: 'app',
     },
+    // No date yet.
+    {
+      id: 'move-15',
+      title: 'Look into a label printer',
+      date: null,
+      done: false,
+      doneAt: null,
+      createdAt: at(addDays(today, -6), '19:00:00'),
+      source: 'app',
+    },
+    {
+      id: 'move-16',
+      title: 'Sort out the garage shelves',
+      date: null,
+      done: false,
+      doneAt: null,
+      createdAt: at(addDays(today, -2), '18:15:00'),
+      source: 'app',
+    },
     // Coming up.
     {
       id: 'move-11',

@@ -5,12 +5,12 @@ import type { Move } from './types.ts'
 /** The contract every Moves data source must meet (in-memory now, PowerSync later). */
 export interface MovesStore {
   moves: Move[]
-  /** Adds a Move (today by default). Returns null if the title is empty. */
-  addMove: (title: string, date?: ISODate, options?: { arcId?: string | null }) => Move | null
+  /** Adds a Move (today by default; pass null for no date). Returns null if the title is empty. */
+  addMove: (title: string, date?: ISODate | null, options?: { arcId?: string | null }) => Move | null
   /** Marks a Move done, or not done again. */
   toggleMove: (id: string) => void
-  /** Reschedules a Move to another day (keeps it open). */
-  moveToDay: (id: string, date: ISODate) => void
+  /** Reschedules a Move to another day, or to no date (keeps it open). */
+  moveToDay: (id: string, date: ISODate | null) => void
 }
 
 export const MovesContext = createContext<MovesStore | null>(null)

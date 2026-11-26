@@ -15,7 +15,7 @@ import type { Move } from './types.ts'
 export function MovesProvider({ children }: { children: ReactNode }) {
   const [moves, setMoves] = useState<Move[]>(createSampleMoves)
 
-  const addMove = useCallback((rawTitle: string, date: ISODate = todayISO(), options?: { arcId?: string | null }) => {
+  const addMove = useCallback((rawTitle: string, date: ISODate | null = todayISO(), options?: { arcId?: string | null }) => {
     const title = normalizeMoveTitle(rawTitle)
     if (!title) return null
     const move: Move = {
@@ -42,7 +42,7 @@ export function MovesProvider({ children }: { children: ReactNode }) {
     )
   }, [])
 
-  const moveToDay = useCallback((id: string, date: ISODate) => {
+  const moveToDay = useCallback((id: string, date: ISODate | null) => {
     setMoves((prev) => prev.map((m) => (m.id === id ? { ...m, date } : m)))
   }, [])
 

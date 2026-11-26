@@ -6,8 +6,8 @@ export type ItemSource = 'app' | 'ai'
 export interface Move {
   id: string
   title: string
-  /** The day this Move is planned for. */
-  date: ISODate
+  /** The day this Move is planned for, or null for a Move with no date. */
+  date: ISODate | null
   done: boolean
   /** ISO timestamp of completion, or null when not done. */
   doneAt: string | null

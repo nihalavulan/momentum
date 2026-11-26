@@ -16,7 +16,7 @@ export function normalizeMoveTitle(raw: string): string | null {
 
 /** Not done, and planned for a day before `today`. */
 export function isOverdue(move: Move, today: ISODate = todayISO()): boolean {
-  return !move.done && move.date < today
+  return !move.done && move.date !== null && move.date < today
 }
 
 /** Completed during `today` (whatever day it was planned for). */
@@ -49,7 +49,7 @@ export function groupForToday(moves: Move[], today: ISODate = todayISO()): Today
     else if (move.done && (move.date === today || isDoneOn(move, today))) done.push(move)
   }
 
-  overdue.sort((a, b) => a.date.localeCompare(b.date) || a.createdAt.localeCompare(b.createdAt))
+  overdue.sort((a, b) => (a.date ?? '').localeCompare(b.date ?? '') || a.createdAt.localeCompare(b.createdAt))
   open.sort((a, b) => a.createdAt.localeCompare(b.createdAt))
   done.sort((a, b) => (b.doneAt ?? '').localeCompare(a.doneAt ?? ''))
 
@@ -78,4 +78,13 @@ export function groupForDay(moves: Move[], day: ISODate, today: ISODate = todayI
 export function dayProgress(moves: Move[], day: ISODate, today: ISODate = todayISO()) {
   const g = groupForDay(moves, day, today)
   return { done: g.done.length, total: g.total }
+}
+
+/** Moves with no date: open ones first (oldest first), then done (most recent first). */
+export function groupUndated(moves: Move[]) {
+  const open = moves.filter((m) => m.date === null && !m.done).sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+  const done = moves
+    .filter((m) => m.date === null && m.done)
+    .sort((a, b) => (b.doneAt ?? '').localeCompare(a.doneAt ?? ''))
+  return { open, done }
 }

@@ -3,6 +3,7 @@ import { Sidebar } from './components/layout/Sidebar.tsx'
 import { TabBar } from './components/layout/TabBar.tsx'
 import { TABS, useActiveTab } from './components/layout/tabs.ts'
 import { MovesProvider } from './features/moves/MovesProvider.tsx'
+import { MovesView } from './features/moves/MovesView.tsx'
 import { TodayView } from './features/today/TodayView.tsx'
 
 /**
@@ -21,6 +22,8 @@ export default function App() {
         <main className="mx-auto w-full max-w-xl px-5 pb-40 lg:max-w-[1160px] lg:px-14 lg:pb-24">
           {tab === 'today' ? (
             <TodayView key={resetKey} />
+          ) : tab === 'moves' ? (
+            <MovesView />
           ) : (
             <ComingSoonView title={current.label} icon={current.icon} />
           )}
