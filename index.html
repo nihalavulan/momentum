@@ -7,6 +7,27 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>%APP_NAME%</title>
+    <!-- Theme before first paint (no flash). Same rules as src/lib/theme.ts. -->
+    <script>
+      ;(function () {
+        var pref = 'system'
+        try {
+          pref = JSON.parse(localStorage.getItem('momentum:theme')) || 'system'
+        } catch (e) {}
+        var dark = pref === 'dark' || (pref !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+        if (dark) {
+          // Placed before the app's own (orange) theme-color, so it wins in dark only.
+          var m = document.createElement('meta')
+          m.name = 'theme-color'
+          m.content = '#141414'
+          m.setAttribute('data-dark-theme-color', '')
+          document.head.appendChild(m)
+        }
+        var s = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]')
+        if (s && dark) s.content = 'black'
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

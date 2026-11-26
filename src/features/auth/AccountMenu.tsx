@@ -2,6 +2,8 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { useAuth } from './authContext.ts'
 import { labels } from '../../config/labels.ts'
 import { openSpacesManager } from '../spaces/spacesContext.ts'
+import { haptic } from '../../lib/haptics.ts'
+import { useThemePref, type ThemePref } from '../../lib/theme.ts'
 
 /** Ask the app shell to show the intro again (listened to in App). */
 export const SHOW_INTRO_EVENT = 'momentum:show-intro'
@@ -64,6 +66,7 @@ export function AccountMenu({ variant = 'avatar' }: { variant?: 'avatar' | 'row'
           <p className="truncate px-3 pt-2 pb-3 text-[13px] text-ink-2">
             Signed in as <span className="font-semibold text-ink">{user.email}</span>
           </p>
+          <ThemeSwitch />
           <MenuItem
             onClick={() => {
               setOpen(false)
@@ -90,6 +93,48 @@ export function AccountMenu({ variant = 'avatar' }: { variant?: 'avatar' | 'row'
           </MenuItem>
         </div>
       )}
+    </div>
+  )
+}
+
+const THEME_OPTIONS: { value: ThemePref; label: string }[] = [
+  { value: 'system', label: 'System' },
+  { value: 'light', label: 'Light' },
+  { value: 'dark', label: 'Dark' },
+]
+
+/** Appearance: follow the device, or always light / dark. Saved on this device. */
+function ThemeSwitch() {
+  const [pref, setPref] = useThemePref()
+  return (
+    <div className="px-3 pt-1 pb-3">
+      <p className="mb-2 text-[13px] text-ink-2">Appearance</p>
+      <div role="radiogroup" aria-label="Appearance" className="grid grid-cols-3 gap-1 rounded-xl bg-surface p-1">
+        {THEME_OPTIONS.map((o) => {
+          const selected = pref === o.value
+          return (
+            <button
+              key={o.value}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              onClick={() => {
+                if (selected) return
+                haptic('selection')
+                setPref(o.value)
+              }}
+              className={[
+                'h-8 rounded-lg text-[13px] outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-primary/30',
+                selected
+                  ? 'bg-white font-semibold text-ink shadow-[0_1px_3px_rgba(0,0,0,0.12)]'
+                  : 'font-medium text-ink-2 hover:text-ink',
+              ].join(' ')}
+            >
+              {o.label}
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }

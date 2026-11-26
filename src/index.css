@@ -26,6 +26,33 @@
     'Helvetica Neue', Arial, sans-serif;
 }
 
+/*
+ * Dark theme: the same tokens, redefined. "white" is the page/card colour and
+ * "ink" the text, so solid-ink pieces (selected chips, toast, avatar) flip
+ * with them. Set by src/lib/theme.ts (and the no-flash script in index.html).
+ */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-white: #141414;
+  --color-ink: #ececec;
+  --color-ink-2: #a1a1a1;
+  --color-ink-3: #6c6c6c;
+  --color-line: #2b2b2b;
+  --color-surface: #1f1f1f;
+  --color-danger: #ff7a5c;
+  --color-neutral-900: #ececec;
+  --color-primary-soft: color-mix(in srgb, var(--brand-primary) 20%, #141414);
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+/* Focus-ring gaps match the page instead of a fixed white. */
+:root[data-theme='dark'] * {
+  --tw-ring-offset-color: var(--color-white);
+}
+
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;

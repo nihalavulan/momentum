@@ -14,8 +14,11 @@ import { TodayView } from './features/today/TodayView.tsx'
 import { SpacesProvider } from './features/spaces/SpacesProvider.tsx'
 import { SpacesSheet } from './features/spaces/components/SpacesSheet.tsx'
 import { OPEN_SPACES_EVENT } from './features/spaces/spacesContext.ts'
+import { useThemePref } from './lib/theme.ts'
 
 export default function App() {
+  // Applies the saved theme and follows the device setting on "System".
+  useThemePref()
   return (
     <AuthProvider>
       <Gate />
